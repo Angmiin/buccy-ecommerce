@@ -1,45 +1,95 @@
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { fetchProducts } from "@/lib/fakestore-api";
+import { useEffect, useState } from "react";
 
-// Mock data - would be fetched from API in real implementation
-const featuredProducts = [
-  {
-    id: "1",
-    name: "Silk Blend Blazer",
-    price: 2450,
-    image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea",
-    category: "Outerwear",
-    isNew: true,
-  },
-  {
-    id: "2",
-    name: "Cashmere Sweater",
-    price: 1250,
-    image: "https://images.unsplash.com/photo-1576566588028-4147f3842f27",
-    category: "Tops",
-    isNew: false,
-  },
-  {
-    id: "3",
-    name: "Leather Trousers",
-    price: 1850,
-    image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec",
-    category: "Pants",
-    isNew: true,
-  },
-  {
-    id: "4",
-    name: "Signature Scarf",
-    price: 650,
-    image: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26",
-    category: "Accessories",
-    isNew: false,
-  },
-];
+interface Product {
+  id: number;
+  title: string;
+  price: number;
+  description: string;
+  category: string;
+  image: string;
+  rating: {
+    rate: number;
+    count: number;
+  };
+}
 
 export default function FeaturedProducts() {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoading(true);
+        const products = await fetchProducts();
+        
+        // Get top-rated products (rating > 4) as featured products
+        const featured = products
+          .filter(product => product.rating.rate > 4)
+          .slice(0, 4); // Take first 4 featured products
+
+        setFeaturedProducts(featured);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load featured products");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="container px-4 py-12">
+        <div className="mb-10 text-center">
+          <h2 className="mb-2 font-serif text-3xl font-bold tracking-tight md:text-4xl">
+            Featured Collection
+          </h2>
+          <p className="mx-auto max-w-2xl text-muted-foreground">
+            Discover our most coveted pieces, meticulously crafted for the
+            discerning individual.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="aspect-[3/4] bg-gray-100 rounded-lg"></div>
+              <div className="mt-4 h-4 bg-gray-100 rounded"></div>
+              <div className="mt-2 h-4 bg-gray-100 rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="container px-4 py-12">
+        <div className="mb-10 text-center">
+          <h2 className="mb-2 font-serif text-3xl font-bold tracking-tight md:text-4xl">
+            Featured Collection
+          </h2>
+          <p className="mx-auto max-w-2xl text-muted-foreground">
+            Discover our most coveted pieces, meticulously crafted for the
+            discerning individual.
+          </p>
+          <p className="text-red-500 mt-4">{error}</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="container px-4 py-12">
       <div className="mb-10 text-center">
@@ -54,34 +104,37 @@ export default function FeaturedProducts() {
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {featuredProducts.map((product) => (
-          <Link href={`/products/${product.id}`} key={product.id}>
-            <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
+          <Card key={product.id} className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
+            <Link href={`/products/${product.id}`} className="block">
               <div className="relative aspect-[3/4] overflow-hidden">
                 <Image
                   src={product.image || "/placeholder.svg"}
-                  alt={product.name}
+                  alt={product.title}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
-                {product.isNew && (
+                {product.rating.rate > 4 && (
                   <Badge className="absolute right-3 top-3 bg-black px-2 py-1 text-white">
                     New
                   </Badge>
                 )}
               </div>
-              <CardContent className="p-4">
-                <h3 className="font-medium">{product.name}</h3>
-                <div className="mt-1 flex items-center justify-between">
-                  <p className="font-serif text-lg">
-                    ${product.price.toLocaleString()}
-                  </p>
-                  <span className="text-sm text-muted-foreground">
-                    {product.category}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+            </Link>
+            <CardContent className="p-4">
+              <Link href={`/products/${product.id}`}>
+                <h3 className="font-medium hover:underline">{product.title}</h3>
+              </Link>
+              <div className="mt-1 flex items-center justify-between">
+                <p className="font-serif text-lg">
+                  ${product.price.toLocaleString()}
+                </p>
+                <span className="text-sm text-muted-foreground capitalize">
+                  {product.category}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
@@ -98,5 +151,3 @@ export default function FeaturedProducts() {
     </section>
   );
 }
-
-import { Button } from "@/components/ui/button";

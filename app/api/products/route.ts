@@ -1,123 +1,180 @@
-import { NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import clientPromise from "@/lib/mongodb"
+import { NextResponse } from "next/server";
+import { 
+  ProductService,
+  type LuxuryCategory,
+  type Product,
+  LUXURY_CATEGORIES
+} from "@/lib/fakeshop-api";
 
-// GET all products with optional filtering
-export async function GET(req: Request) {
+type ApiResponse<T> = {
+  success: boolean;
+  data?: T;
+  error?: string;
+};
+
+type ProductListResponse = {
+  products: Product[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+};
+
+type ProductQueryParams = {
+  category?: LuxuryCategory;
+  limit?: number;
+  sort?: 'price-asc' | 'price-desc' | 'rating' | 'newest';
+  search?: string;
+  page?: number;
+};
+
+export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const category = searchParams.get("category")
-    const collection = searchParams.get("collection")
-    const gender = searchParams.get("gender")
-    const minPrice = searchParams.get("minPrice")
-    const maxPrice = searchParams.get("maxPrice")
-    const sort = searchParams.get("sort") || "featured"
-    const page = Number.parseInt(searchParams.get("page") || "1")
-    const limit = Number.parseInt(searchParams.get("limit") || "12")
+    const { searchParams } = new URL(request.url);
+    
+    // Parse and validate query parameters with defaults
+    const queryParams: ProductQueryParams = {
+      category: validateCategory(searchParams.get("category")),
+      limit: validateNumber(searchParams.get("limit")),
+      sort: validateSort(searchParams.get("sort")),
+      search: searchParams.get("search") || undefined,
+      page: validateNumber(searchParams.get("page"), 1) // Default to page 1
+    };
 
-    // Build query
-    const query: any = {}
+    const { products, total } = await ProductService.getAll(queryParams);
+    
+    // Calculate pagination with guaranteed numbers
+    const limit = queryParams.limit ?? total;
+    const page = queryParams.page ?? 1;
+    const totalPages = queryParams.limit ? Math.ceil(total / queryParams.limit) : 1;
 
-    if (category) query.category = category
-    if (collection) query.collection = collection
-    if (gender) query.gender = gender
-
-    if (minPrice || maxPrice) {
-      query.price = {}
-      if (minPrice) query.price.$gte = Number.parseInt(minPrice)
-      if (maxPrice) query.price.$lte = Number.parseInt(maxPrice)
-    }
-
-    // Build sort
-    const sortOptions: any = {}
-    switch (sort) {
-      case "newest":
-        sortOptions.createdAt = -1
-        break
-      case "price-asc":
-        sortOptions.price = 1
-        break
-      case "price-desc":
-        sortOptions.price = -1
-        break
-      case "featured":
-      default:
-        sortOptions.featured = -1
-        break
-    }
-
-    const client = await clientPromise
-    const db = client.db("bucci")
-
-    // Get total count for pagination
-    const total = await db.collection("products").countDocuments(query)
-
-    // Get products
-    const products = await db
-      .collection("products")
-      .find(query)
-      .sort(sortOptions)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .toArray()
-
-    return NextResponse.json({
-      products,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
-      },
-    })
-  } catch (error) {
-    console.error("Error fetching products:", error)
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
-  }
-}
-
-// POST a new product (admin only)
-export async function POST(req: Request) {
-  try {
-    const session = await getServerSession()
-
-    // Check if user is authenticated and is an admin
-    if (!session || session.user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const productData = await req.json()
-
-    // Validate required fields
-    const requiredFields = ["name", "price", "category"]
-    for (const field of requiredFields) {
-      if (!productData[field]) {
-        return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 })
+    return NextResponse.json<ApiResponse<ProductListResponse>>({
+      success: true,
+      data: {
+        products,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: totalPages,
+        },
       }
-    }
-
-    const client = await clientPromise
-    const db = client.db("bucci")
-
-    // Add timestamps
-    const newProduct = {
-      ...productData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
-    const result = await db.collection("products").insertOne(newProduct)
-
-    return NextResponse.json(
-      {
-        message: "Product created successfully",
-        productId: result.insertedId,
+    });
+  } catch (error: any) {
+    console.error("Error fetching products:", error);
+    return NextResponse.json<ApiResponse<null>>(
+      { 
+        success: false,
+        error: error.message || "Failed to fetch products" 
       },
-      { status: 201 },
-    )
-  } catch (error) {
-    console.error("Error creating product:", error)
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+      { status: 500 }
+    );
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const productData = await request.json();
+    
+    if (!productData.title || !productData.price || !productData.category) {
+      throw new Error("Missing required fields: title, price, category");
+    }
+
+    const newProduct = await ProductService.create(productData);
+    
+    return NextResponse.json<ApiResponse<Product>>(
+      {
+        success: true,
+        data: newProduct
+      },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    console.error("Error creating product:", error);
+    return NextResponse.json<ApiResponse<null>>(
+      { 
+        success: false,
+        error: error.message || "Failed to create product" 
+      },
+      { status: error.statusCode || 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const { id, ...updateData } = await request.json();
+    
+    if (!id) {
+      throw new Error("Product ID is required");
+    }
+
+    const updatedProduct = await ProductService.update(id, updateData);
+    
+    return NextResponse.json<ApiResponse<Product>>(
+      {
+        success: true,
+        data: updatedProduct
+      }
+    );
+  } catch (error: any) {
+    console.error("Error updating product:", error);
+    return NextResponse.json<ApiResponse<null>>(
+      { 
+        success: false,
+        error: error.message || "Failed to update product" 
+      },
+      { status: error.statusCode || 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { id } = await request.json();
+    
+    if (!id) {
+      throw new Error("Product ID is required");
+    }
+
+    await ProductService.delete(id);
+    
+    return NextResponse.json<ApiResponse<null>>(
+      {
+        success: true,
+        data: null
+      }
+    );
+  } catch (error: any) {
+    console.error("Error deleting product:", error);
+    return NextResponse.json<ApiResponse<null>>(
+      { 
+        success: false,
+        error: error.message || "Failed to delete product" 
+      },
+      { status: error.statusCode || 500 }
+    );
+  }
+}
+
+// Helper functions for validation
+function validateCategory(category: string | null): LuxuryCategory | undefined {
+  return category && LUXURY_CATEGORIES.includes(category as LuxuryCategory) 
+    ? category as LuxuryCategory 
+    : undefined;
+}
+
+function validateSort(sort: string | null): ProductQueryParams['sort'] {
+  const validSorts = ['price-asc', 'price-desc', 'rating', 'newest'] as const;
+  return sort && validSorts.includes(sort as any) 
+    ? sort as ProductQueryParams['sort']
+    : undefined;
+}
+
+function validateNumber(value: string | null, defaultValue?: number): number | undefined {
+  if (value === null) return defaultValue;
+  const num = Number(value);
+  return isNaN(num) ? defaultValue : num;
+}
