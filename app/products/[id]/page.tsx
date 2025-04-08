@@ -15,8 +15,11 @@ import { Heart, Share2, Star } from "lucide-react";
 import RelatedProducts from "@/components/related-products";
 import { fetchProduct } from "@/lib/fakestore-api";
 import Link from "next/link";
+import { useCart } from "@/app/context/CartContext";
+import { useParams } from "next/navigation"; 
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default function ProductPage() {
+  const { id } = useParams();
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +27,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
   const [selectedSize, setSelectedSize] = useState("M");
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const {addToCart} = useCart();
+
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -32,11 +37,11 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         setError(null);
         
         // Validate product ID
-        if (!params.id || isNaN(Number(params.id))) {
+        if (!id || isNaN(Number(id))) {
           throw new Error('Invalid product ID');
         }
 
-        const productData = await fetchProduct(params.id);
+        const productData = await fetchProduct(id as string);
         
         if (!productData || !productData.id) {
           throw new Error('Product not found');
@@ -77,7 +82,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
     };
 
     loadProduct();
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return (
@@ -272,7 +277,20 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
           {/* Action Buttons */}
           <div className="mb-8 flex space-x-4">
-            <Button className="flex-1 bg-black text-white hover:bg-black/90">
+            <Button 
+              className="flex-1 bg-black text-white hover:bg-black/90"
+              onClick={() => addToCart(
+                {
+                  id: product.id.toString(),
+                  name: product.title,
+                  price: product.price,
+                  image: product.image || "/placeholder.svg",
+                  size: selectedSize,
+                  color: selectedColor
+                },
+                quantity  // add the selected quantity to cart
+              )}
+            >
               Add to Cart
             </Button>
             <Button variant="outline" size="icon">

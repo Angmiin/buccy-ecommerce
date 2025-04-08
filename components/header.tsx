@@ -16,6 +16,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
+import { useCart } from "@/app/context/CartContext";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -30,6 +31,8 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const {cart} = useCart();
+  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
@@ -185,7 +188,7 @@ export default function Header() {
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingBag className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-xs text-white">
-                0
+                {itemCount}
               </span>
               <span className="sr-only">Cart</span>
             </Button>
