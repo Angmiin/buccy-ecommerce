@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import "./globals.css";
+import { CartProvider } from "./context/CartContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <AuthProvider>
+          <CartProvider>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
@@ -36,6 +38,7 @@ export default function RootLayout({
             </div>
             <Toaster />
           </ThemeProvider>
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,48 +1,66 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
-import Image from "next/image"
-import { Heart } from "lucide-react"
+"use client"; // Add this directive at the top
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import Image from "next/image";
+import { Heart } from "lucide-react";
 
 interface Product {
-  id: string
-  name: string
-  price: number
-  image: string
-  category: string
-  isNew?: boolean
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  category: string;
+  isNew?: boolean;
 }
 
 interface ProductCardProps {
-  product: Product
+  product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Your favorite logic here
+    console.log("Added to favorites:", product.id);
+  };
+
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
-      <div className="relative aspect-[3/4] overflow-hidden">
-        <Image
-          src={product.image || "/placeholder.svg"}
-          alt={product.name}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        {product.isNew && <Badge className="absolute right-3 top-3 bg-black px-2 py-1 text-white">New</Badge>}
-        <button className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-black transition-all hover:bg-white">
-          <Heart className="h-4 w-4" />
-          <span className="sr-only">Add to favorites</span>
-        </button>
-      </div>
+      <Link href={`/products/${product.id}`}>
+        <div className="relative aspect-[3/4] overflow-hidden">
+          <Image
+            src={product.image || "/placeholder.svg"}
+            alt={product.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+          {product.isNew && (
+            <Badge className="absolute right-3 top-3 bg-black px-2 py-1 text-white">
+              New
+            </Badge>
+          )}
+        </div>
+      </Link>
+      
       <CardContent className="p-4">
-        <Link href={`/products/${product.id}`}>
-          <h3 className="font-medium hover:underline">{product.name}</h3>
+        <Link href={`/products/${product.id}`} className="hover:underline">
+          <h3 className="font-medium">{product.name}</h3>
         </Link>
         <div className="mt-1 flex items-center justify-between">
           <p className="font-serif text-lg">${product.price.toLocaleString()}</p>
-          <span className="text-sm text-muted-foreground">{product.category}</span>
+          <button 
+            onClick={handleFavorite}
+            className="text-muted-foreground hover:text-primary transition-colors"
+            aria-label="Add to favorites"
+          >
+            <Heart className="h-4 w-4" />
+          </button>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-
