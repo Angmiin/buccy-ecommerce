@@ -177,8 +177,11 @@ export default function Header() {
           )}
 
           <Link href="/favorites">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="relative">
               <Heart className="h-5 w-5" />
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black text-xs text-white">
+                0
+              </span>
               <span className="sr-only">Favorites</span>
             </Button>
           </Link>
