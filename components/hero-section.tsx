@@ -21,8 +21,7 @@ export default function HeroSection() {
           BUCCI
         </h1>
         <p className="mb-8 max-w-2xl text-lg font-light tracking-wider sm:text-xl">
-          Redefining luxury with extravagance and elegance. Discover our latest
-          collection.
+          Redefining luxury with extravagance and elegance, quality is remembered long after price is forgotten
         </p>
         <div className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
           <Button
@@ -37,23 +36,10 @@ export default function HeroSection() {
             size="lg"
             className="min-w-[150px] bg-white text-black"
           >
-            <Link href="/collections/new">New Arrivals</Link>
           </Button>
         </div>
       </div>
-
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-        <div className="flex space-x-2">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`h-2 w-2 rounded-full ${
-                i === 1 ? "bg-white" : "bg-white/50"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
     </div>
+
   );
 }

@@ -53,7 +53,7 @@ export default function FeaturedProducts() {
       <section className="container px-4 py-12">
         <div className="mb-10 text-center">
           <h2 className="mb-2 font-serif text-3xl font-bold tracking-tight md:text-4xl">
-            Featured Collection
+            Featured Products
           </h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             Discover our most coveted pieces, meticulously crafted for the
@@ -78,7 +78,7 @@ export default function FeaturedProducts() {
       <section className="container px-4 py-12">
         <div className="mb-10 text-center">
           <h2 className="mb-2 font-serif text-3xl font-bold tracking-tight md:text-4xl">
-            Featured Collection
+          Featured Products
           </h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             Discover our most coveted pieces, meticulously crafted for the
@@ -94,7 +94,7 @@ export default function FeaturedProducts() {
     <section className="container px-4 py-12">
       <div className="mb-10 text-center">
         <h2 className="mb-2 font-serif text-3xl font-bold tracking-tight md:text-4xl">
-          Featured Collection
+        Featured Products
         </h2>
         <p className="mx-auto max-w-2xl text-muted-foreground">
           Discover our most coveted pieces, meticulously crafted for the

@@ -21,7 +21,6 @@ import { useCart } from "@/app/context/CartContext";
 const navigation = [
   { name: "Home", href: "/" },
   { name: "Shop", href: "/products" },
- // { name: "Collections", href: "/collections" }, Not implemented
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
 ];
